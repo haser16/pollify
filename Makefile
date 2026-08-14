@@ -1,4 +1,5 @@
 include .env
+export
 
 ifeq ($(OS),Windows_NT)
     PROJECT_ROOT := $(CURDIR)
@@ -24,7 +25,7 @@ env-cleanup:
 	fi
 
 env-port-forward:
-	@docker composeup -d port-forwarder
+	@docker compose up -d port-forwarder
 
 env-port-close:
 	@docker compose down port-forwarder
@@ -53,7 +54,7 @@ migrate-action:
     	fi
 	@docker compose run --rm --use-aliases pollify-postgres-migrate \
 		-path=//migrations \
-		-database "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@todoapp-postgres:5432/${POSTGRES_DB}?sslmode=disable" \
+		-database "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pollify-postgres:5432/${POSTGRES_DB}?sslmode=disable" \
 		"$(action)"
 
 
