@@ -1,7 +1,7 @@
 services:
   pollify-postgres:
     image: postgres:18.1-bookworm
-    container_name: todoapp-env-postgres
+    container_name: pollify-env-postgres
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -17,8 +17,8 @@ services:
 
   port-forwarder:
     image: alpine/socat:1.8.0.3
-    container_name: todoapp-postgres-port-forwarder
-    command: tcp-listen:5432,fork,reuseaddr tcp-connect:todoapp-postgres:5432
+    container_name: pollify-postgres-port-forwarder
+    command: tcp-listen:5432,fork,reuseaddr tcp-connect:pollify-postgres:5432
     ports:
       - "127.0.0.1:5432:5432"
 
