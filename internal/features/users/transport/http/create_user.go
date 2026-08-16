@@ -45,5 +45,6 @@ func domainFromDTO(request CreateUserRequest) domain.User {
 		request.FullName,
 		request.Email,
 		&request.PhoneNumber,
+		request.Password,
 	)
 }

@@ -19,12 +19,14 @@ func NewUser(
 	fullName string,
 	email string,
 	phoneNumber *string,
+	password string,
 ) User {
 	return User{
 		ID:          id,
 		FullName:    fullName,
 		Email:       email,
 		PhoneNumber: phoneNumber,
+		Password:    password,
 	}
 }
 
@@ -32,12 +34,14 @@ func NewUserUnInitialized(
 	fullName string,
 	email string,
 	phoneNumber *string,
+	password string,
 ) User {
 	return NewUser(
 		UnInitializedID,
 		fullName,
 		email,
 		phoneNumber,
+		password,
 	)
 }
 
@@ -124,4 +128,16 @@ func (u *User) ApplyPatch(patch UserPatch) error {
 	*u = tmp
 
 	return nil
+}
+
+type UserAuthorize struct {
+	Email    string
+	Password string
+}
+
+func NewAuthorizeUser(email, password string) UserAuthorize {
+	return UserAuthorize{
+		Email:    email,
+		Password: password,
+	}
 }

@@ -7,6 +7,7 @@ import (
 
 type UsersService struct {
 	usersRepository UsersRepository
+	jwtSecret       []byte
 }
 
 type UsersRepository interface {
@@ -32,10 +33,15 @@ type UsersRepository interface {
 		id int,
 		user domain.User,
 	) (domain.User, error)
+	GetUserByEmail(
+		ctx context.Context,
+		email string,
+	) (domain.User, error)
 }
 
-func NewUsersService(usersRepository UsersRepository) *UsersService {
+func NewUsersService(usersRepository UsersRepository, jwtSecret string) *UsersService {
 	return &UsersService{
 		usersRepository: usersRepository,
+		jwtSecret:       []byte(jwtSecret),
 	}
 }

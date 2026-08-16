@@ -3,6 +3,7 @@ package core_pgx_pool
 import (
 	"context"
 	"fmt"
+	core_config "pollify/internal/core/config"
 	core_postgres_pool "pollify/internal/core/repository/postgres/pool"
 	"time"
 
@@ -16,7 +17,7 @@ type Pool struct {
 
 func NewPool(
 	ctx context.Context,
-	config Config,
+	config core_config.Config,
 ) (*Pool, error) {
 	connectionString := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
