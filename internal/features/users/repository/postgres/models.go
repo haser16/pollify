@@ -7,6 +7,7 @@ type UserModel struct {
 	FullName    string
 	Email       string
 	PhoneNumber *string
+	Password    string
 }
 
 func userDomainsFromModels(users []UserModel) []domain.User {
@@ -18,6 +19,7 @@ func userDomainsFromModels(users []UserModel) []domain.User {
 			user.FullName,
 			user.Email,
 			user.PhoneNumber,
+			user.Password,
 		)
 	}
 
