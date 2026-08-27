@@ -10,6 +10,9 @@ import (
 	core_pgx_pool "pollify/internal/core/repository/postgres/pool/pgx"
 	core_http_middleware "pollify/internal/core/transport/http/middleware"
 	core_http_server "pollify/internal/core/transport/http/server"
+	polls_postgres_repository "pollify/internal/features/polls/repository/postgres"
+	polls_service "pollify/internal/features/polls/service"
+	polls_transport_http "pollify/internal/features/polls/transport/http"
 	users_postgres_repository "pollify/internal/features/users/repository/postgres"
 	users_service "pollify/internal/features/users/service"
 	users_transport_http "pollify/internal/features/users/transport/http"
@@ -43,6 +46,11 @@ func main() {
 	usersService := users_service.NewUsersService(usersRepository, config.JWTToken)
 	usersTransportHTTP := users_transport_http.NewUsersHTTPHandler(usersService)
 
+	logger.Debug("initializing feature", zap.String("feature", "polls"))
+	pollsRepository := polls_postgres_repository.NewPollsRepository(pool)
+	pollsService := polls_service.NewPollsService(pollsRepository)
+	pollsTransportHTTP := polls_transport_http.NewPollsHTTPHandler(pollsService)
+
 	logger.Debug("initializing HTTP server")
 	httpServer := core_http_server.NewHTTPServer(
 		core_http_server.NewConfigMust(),
@@ -55,6 +63,8 @@ func main() {
 	apiVersionRouter := core_http_server.NewAPIVersionRouter(&core_http_server.APIVersion1)
 
 	apiVersionRouter.RegisterRoutes(usersTransportHTTP.Routes()...)
+	apiVersionRouter.RegisterRoutes(pollsTransportHTTP.Routes()...)
+	
 	httpServer.RegisterAPIRouters(apiVersionRouter)
 
 	if err := httpServer.Run(ctx); err != nil {

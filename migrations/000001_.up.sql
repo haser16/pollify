@@ -16,7 +16,7 @@ CREATE TABLE pollify.users
 CREATE TABLE pollify.polls
 (
     id          SERIAL PRIMARY KEY,
-    title       VARCHAR(100) NOT NULL CHECK (char_length(title) BETWEEN 2 AND 100),
+    title       VARCHAR(100) NOT NULL CHECK (char_length(title) BETWEEN 2 AND 100) UNIQUE,
     description VARCHAR(1000)         CHECK (char_length(description) BETWEEN 1 AND 1000),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expires_at  TIMESTAMPTZ NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE pollify.options
 (
     id          SERIAL PRIMARY KEY,
     question_id INT NOT NULL REFERENCES pollify.questions(id) ON DELETE CASCADE,
-    option_text VARCHAR(255) NOT NULL
+    option_text VARCHAR(500) NOT NULL
 );
 
 CREATE TABLE pollify.votes
