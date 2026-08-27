@@ -90,3 +90,34 @@ func (p *Pool) Exec(
 	}
 	return pgxCommandTag{tag}, nil
 }
+
+// tx
+
+func (t pgxTx) Exec(ctx context.Context, sql string, arguments ...any) (core_postgres_pool.CommandTag, error) {
+	tag, err := t.Tx.Exec(ctx, sql, arguments...)
+	if err != nil {
+		return nil, err
+	}
+	return tag, nil
+}
+
+func (t pgxTx) Query(ctx context.Context, sql string, args ...any) (core_postgres_pool.Rows, error) {
+	rows, err := t.Tx.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	return pgxRows{rows}, nil
+}
+
+func (t pgxTx) QueryRow(ctx context.Context, sql string, args ...any) core_postgres_pool.Row {
+	return pgxRow{t.Tx.QueryRow(ctx, sql, args...)}
+}
+
+func (p *Pool) Begin(ctx context.Context) (core_postgres_pool.Tx, error) {
+	tx, err := p.Pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return pgxTx{tx}, nil
+}

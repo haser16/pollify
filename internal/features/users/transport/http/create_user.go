@@ -2,7 +2,7 @@ package users_transport_http
 
 import (
 	"net/http"
-	"pollify/internal/core/domain"
+	core_domain "pollify/internal/core/domain"
 	core_logger "pollify/internal/core/logger"
 	core_http_request "pollify/internal/core/transport/http/request"
 	core_http_response "pollify/internal/core/transport/http/response"
@@ -37,11 +37,11 @@ func (h *UsersHTTPHandler) CreateUser(rw http.ResponseWriter, r *http.Request) {
 	}
 	response := CreateUserResponse(userDTOFromDomain(userDomain))
 
-	responseHandler.JsonResponse(response, http.StatusOK)
+	responseHandler.JsonResponse(response, http.StatusCreated)
 }
 
-func domainFromDTO(request CreateUserRequest) domain.User {
-	return domain.NewUserUnInitialized(
+func domainFromDTO(request CreateUserRequest) core_domain.User {
+	return core_domain.NewUserUnInitialized(
 		request.FullName,
 		request.Email,
 		&request.PhoneNumber,
