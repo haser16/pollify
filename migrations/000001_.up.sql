@@ -10,7 +10,7 @@ CREATE TABLE pollify.users
         AND
         char_length(phone_number) BETWEEN 10 AND 15
 ),
-    password      CHAR(60) NOT NULL
+    password      CHAR(120) NOT NULL
 );
 
 CREATE TABLE pollify.polls
@@ -20,7 +20,7 @@ CREATE TABLE pollify.polls
     description VARCHAR(1000)         CHECK (char_length(description) BETWEEN 1 AND 1000),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expires_at  TIMESTAMPTZ NOT NULL,
-    completed   BOOLEAN NOT NULL DEFAULT FALSE,
+    is_expire   BOOLEAN NOT NULL DEFAULT FALSE,
     owner_id    INT NOT NULL REFERENCES pollify.users(id) ON DELETE CASCADE
 );
 

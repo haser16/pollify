@@ -34,6 +34,10 @@ type UsersService interface {
 		id int,
 		patch domain.UserPatch,
 	) (domain.User, error)
+	AuthorizeUser(
+		ctx context.Context,
+		data domain.UserAuthorize,
+	) (string, error)
 }
 
 func NewUsersHTTPHandler(usersService UsersService) *UsersHTTPHandler {
@@ -68,6 +72,11 @@ func (h *UsersHTTPHandler) Routes() []core_http_server.Route {
 			Method:  http.MethodPatch,
 			Path:    "/users/{id}",
 			Handler: h.PatchUser,
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/users/login",
+			Handler: h.AuthorizeUser,
 		},
 	}
 }

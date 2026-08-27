@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	core_config "pollify/internal/core/config"
 	core_logger "pollify/internal/core/logger"
 	core_pgx_pool "pollify/internal/core/repository/postgres/pool/pgx"
 	core_http_middleware "pollify/internal/core/transport/http/middleware"
@@ -24,6 +25,8 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
+	config := core_config.NewConfigMust()
+
 	logger, err := core_logger.NewLogger(core_logger.NewConfigMust())
 	if err != nil {
 		fmt.Printf("Failed to initialize logger: %s\n", err)
@@ -32,7 +35,7 @@ func main() {
 	defer logger.Close()
 
 	logger.Debug("initialize postgres connection pool")
-	pool, err := core_pgx_pool.NewPool(ctx, core_pgx_pool.NewConfigMust())
+	pool, err := core_pgx_pool.NewPool(ctx, config)
 	if err != nil {
 		logger.Fatal("failed to init postgres connection pool", zap.Error(err))
 	}
@@ -40,7 +43,7 @@ func main() {
 
 	logger.Debug("initializing feature", zap.String("feature", "users"))
 	usersRepository := users_postgres_repository.NewUsersRepository(pool)
-	usersService := users_service.NewUsersService(usersRepository)
+	usersService := users_service.NewUsersService(usersRepository, config.JWTToken)
 	usersTransportHTTP := users_transport_http.NewUsersHTTPHandler(usersService)
 
 	logger.Debug("initializing feature", zap.String("feature", "polls"))
