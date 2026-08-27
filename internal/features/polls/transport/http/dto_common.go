@@ -45,20 +45,6 @@ type OptionResponse struct {
 	OptionText string `json:"option_text"`
 }
 
-type VoteResponse struct {
-	ID         int       `json:"id"`
-	UserID     int       `json:"user_id"`
-	QuestionID int       `json:"question_id"`
-	OptionID   int       `json:"option_id"`
-	VotedAt    time.Time `json:"voted_at"`
-}
-
-type VoteRequest struct {
-	UserID     int `json:"user_id"`
-	QuestionID int `json:"question_id"`
-	OptionID   int `json:"option_id"`
-}
-
 func domainFromDTO(request CreatePollRequest) core_domain.Poll {
 	domainQuestions := make([]core_domain.Question, len(request.Questions))
 
@@ -147,26 +133,4 @@ func optionsDTOsFromDomain(options []core_domain.Option) []OptionResponse {
 
 func optionDomainFromDTO(option PatchOptionRequest, questionID int) core_domain.Option {
 	return core_domain.NewOptionUninitialized(questionID, option.OptionText)
-}
-
-func voteDTOFromDomain(vote core_domain.Vote) VoteResponse {
-	return VoteResponse{
-		ID:         vote.ID,
-		UserID:     vote.UserID,
-		QuestionID: vote.QuestionID,
-		OptionID:   vote.OptionID,
-		VotedAt:    vote.VotedAt,
-	}
-}
-
-func votesDTOsFromDomains(votes []core_domain.Vote) []VoteResponse {
-	responses := make([]VoteResponse, len(votes))
-	for i, p := range votes {
-		responses[i] = voteDTOFromDomain(p)
-	}
-	return responses
-}
-
-func voteDomainFromDTO(vote CreateVoteRequest) core_domain.Vote {
-	return core_domain.NewVoteUninitialized(vote.UserID, vote.QuestionID, vote.OptionID)
 }

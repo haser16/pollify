@@ -41,16 +41,6 @@ type PollsService interface {
 		ctx context.Context,
 		optionID int,
 	) error
-	GetVotes(
-		ctx context.Context,
-		userID *int,
-		questionID *int,
-		optionID *int,
-	) ([]core_domain.Vote, error)
-	CreateVote(
-		ctx context.Context,
-		vote core_domain.Vote,
-	) (core_domain.Vote, error)
 	PatchOption(
 		ctx context.Context,
 		option core_domain.Option,
@@ -99,17 +89,6 @@ func (h *PollsHTTPHandler) Routes() []core_http_server.Route {
 			Method:  http.MethodDelete,
 			Path:    "/polls/{poll_id}/questions/{question_id}/options/{option_id}",
 			Handler: h.DeleteOption,
-		},
-
-		{
-			Method:  http.MethodGet,
-			Path:    "/votes",
-			Handler: h.GetVotes,
-		},
-		{
-			Method:  http.MethodPost,
-			Path:    "/votes",
-			Handler: h.CreateVote,
 		},
 	}
 }
