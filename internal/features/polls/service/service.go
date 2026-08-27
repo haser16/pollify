@@ -43,16 +43,6 @@ type PollsRepository interface {
 		ctx context.Context,
 		option core_domain.Option,
 	) (core_domain.Option, error)
-	GetVotes(
-		ctx context.Context,
-		userID *int,
-		questionID *int,
-		optionID *int,
-	) ([]core_domain.Vote, error)
-	CreateVote(
-		ctx context.Context,
-		vote core_domain.Vote,
-	) (core_domain.Vote, error)
 }
 
 func NewPollsService(poolsRepository PollsRepository) *PollsService {
