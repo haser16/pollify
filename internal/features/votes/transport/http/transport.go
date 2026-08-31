@@ -2,6 +2,7 @@ package votes_transport_http
 
 import (
 	"context"
+	"net/http"
 	core_domain "pollify/internal/core/domain"
 	core_http_server "pollify/internal/core/transport/http/server"
 )
@@ -29,6 +30,15 @@ func NewVotesHTTPHandler(service VotesService) *VotesHTTPHandler {
 
 func (h *VotesHTTPHandler) Routes() []core_http_server.Route {
 	return []core_http_server.Route{
-		{},
+		{
+			Method:  http.MethodGet,
+			Path:    "/votes",
+			Handler: h.GetVotes,
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/votes",
+			Handler: h.CreateVote,
+		},
 	}
 }

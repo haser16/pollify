@@ -5,6 +5,7 @@ CREATE TABLE pollify.users
     id            SERIAL PRIMARY KEY,
     full_name     VARCHAR(100) NOT NULL CHECK (char_length(full_name) BETWEEN 2 AND 100),
     email         VARCHAR(100) NOT NULL UNIQUE,
+    email_verified BOOLEAN NOT NULL DEFAULT FALSE,
     phone_number  VARCHAR(15)  CHECK (
         phone_number ~ '^\+[0-9]+$'
         AND

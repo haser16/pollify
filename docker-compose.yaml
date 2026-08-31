@@ -22,6 +22,23 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
 
+  rabbitmq:
+    image: rabbitmq:4.3.5-management-alpine
+    hostname: pollify-rabbit
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBIT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBIT_PASSWORD}
+
+  redis:
+    image: redis:alpine3.23
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
   swagger:
     build:
       context: ${PROJECT_ROOT}
