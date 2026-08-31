@@ -3,11 +3,14 @@ package users_service
 import (
 	"context"
 	"pollify/internal/core/domain"
+	"pollify/internal/core/publisher"
 )
 
 type UsersService struct {
 	usersRepository UsersRepository
-	jwtSecret       []byte
+	publisher       core_publisher.Publisher
+
+	jwtSecret []byte
 }
 
 type UsersRepository interface {
@@ -37,11 +40,29 @@ type UsersRepository interface {
 		ctx context.Context,
 		email string,
 	) (domain.User, error)
+	SaveVerificationToken(
+		ctx context.Context,
+		token string,
+		userID int,
+	) error
+	GetUserByToken(
+		ctx context.Context,
+		token string,
+	) (int, error)
+	VerifyEmail(
+		ctx context.Context,
+		userID int,
+	) error
 }
 
-func NewUsersService(usersRepository UsersRepository, jwtSecret string) *UsersService {
+func NewUsersService(
+	usersRepository UsersRepository,
+	jwtSecret string,
+	publisher core_publisher.Publisher,
+) *UsersService {
 	return &UsersService{
 		usersRepository: usersRepository,
 		jwtSecret:       []byte(jwtSecret),
+		publisher:       publisher,
 	}
 }

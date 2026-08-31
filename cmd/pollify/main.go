@@ -7,7 +7,9 @@ import (
 	"os/signal"
 	core_config "pollify/internal/core/config"
 	core_logger "pollify/internal/core/logger"
+	core_publisher_rabbitmq "pollify/internal/core/publisher/rabbitmq"
 	core_pgx_pool "pollify/internal/core/repository/postgres/pool/pgx"
+	core_redis "pollify/internal/core/repository/redis"
 	core_http_middleware "pollify/internal/core/transport/http/middleware"
 	core_http_server "pollify/internal/core/transport/http/server"
 	polls_postgres_repository "pollify/internal/features/polls/repository/postgres"
@@ -16,6 +18,9 @@ import (
 	users_postgres_repository "pollify/internal/features/users/repository/postgres"
 	users_service "pollify/internal/features/users/service"
 	users_transport_http "pollify/internal/features/users/transport/http"
+	votes_postgres_repository "pollify/internal/features/votes/repository/postgres"
+	votes_service "pollify/internal/features/votes/service"
+	votes_transport_http "pollify/internal/features/votes/transport/http"
 	"syscall"
 
 	"go.uber.org/zap"
@@ -34,6 +39,17 @@ func main() {
 	}
 	defer logger.Close()
 
+	logger.Debug("initialize rabbitmq connection pool")
+	publisher, err := core_publisher_rabbitmq.NewPublisher(
+		config.PublisherURL,
+		config.QueueEmailName,
+	)
+	if err != nil {
+		logger.Fatal("Failed to initialize publisher", zap.Error(err))
+	}
+
+	defer publisher.Close()
+
 	logger.Debug("initialize postgres connection pool")
 	pool, err := core_pgx_pool.NewPool(ctx, config)
 	if err != nil {
@@ -41,15 +57,25 @@ func main() {
 	}
 	defer pool.Close()
 
+	logger.Debug("initialize redis connection pool")
+	redisClient := core_redis.New(config.RedisAddr)
+
+	verificationStore := core_redis.NewVerificationStore(redisClient)
+
 	logger.Debug("initializing feature", zap.String("feature", "users"))
-	usersRepository := users_postgres_repository.NewUsersRepository(pool)
-	usersService := users_service.NewUsersService(usersRepository, config.JWTToken)
+	usersRepository := users_postgres_repository.NewUsersRepository(pool, verificationStore)
+	usersService := users_service.NewUsersService(usersRepository, config.JWTToken, publisher)
 	usersTransportHTTP := users_transport_http.NewUsersHTTPHandler(usersService)
 
 	logger.Debug("initializing feature", zap.String("feature", "polls"))
 	pollsRepository := polls_postgres_repository.NewPollsRepository(pool)
 	pollsService := polls_service.NewPollsService(pollsRepository)
 	pollsTransportHTTP := polls_transport_http.NewPollsHTTPHandler(pollsService)
+
+	logger.Debug("initializing feature", zap.String("feature", "votes"))
+	votesRepository := votes_postgres_repository.NewVotesRepository(pool)
+	votesService := votes_service.NewVotesService(votesRepository)
+	votesTransportHTTP := votes_transport_http.NewVotesHTTPHandler(votesService)
 
 	logger.Debug("initializing HTTP server")
 	httpServer := core_http_server.NewHTTPServer(
@@ -64,7 +90,8 @@ func main() {
 
 	apiVersionRouter.RegisterRoutes(usersTransportHTTP.Routes()...)
 	apiVersionRouter.RegisterRoutes(pollsTransportHTTP.Routes()...)
-	
+	apiVersionRouter.RegisterRoutes(votesTransportHTTP.Routes()...)
+
 	httpServer.RegisterAPIRouters(apiVersionRouter)
 
 	if err := httpServer.Run(ctx); err != nil {

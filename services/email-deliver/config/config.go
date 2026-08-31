@@ -1,26 +1,19 @@
-package core_config
+package services_email_config
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/kelseyhightower/envconfig"
 )
 
 type Config struct {
-	Host     string        `envconfig:"POSTGRES_HOST" required:"true"`
-	Port     string        `envconfig:"POSTGRES_PORT" default:"5432"`
-	User     string        `envconfig:"POSTGRES_USER" required:"true"`
-	Password string        `envconfig:"POSTGRES_PASSWORD" required:"true"`
-	Database string        `envconfig:"POSTGRES_DB" required:"true"`
-	TimeOut  time.Duration `envconfig:"POSTGRES_TIMEOUT" required:"true"`
-
-	JWTToken string `envconfig:"JWT_TOKEN" required:"true"`
-
 	PublisherURL   string `envconfig:"PUBLISHER_URL" required:"true"`
 	QueueEmailName string `envconfig:"QUEUE_EMAIL_NAME" required:"true"`
-
-	RedisAddr string `envconfig:"REDIS_ADDR" required:"true"`
+	SMTPHost       string `envconfig:"SMTP_HOST" required:"true"`
+	SMTPPort       int    `envconfig:"SMTP_PORT" required:"true"`
+	SMTPUser       string `envconfig:"SMTP_USER" required:"true"`
+	SMTPPassword   string `envconfig:"SMTP_PASSWORD" required:"true"`
+	SMTPFrom       string `envconfig:"SMTP_FROM" required:"true"`
 }
 
 func NewConfig() (Config, error) {

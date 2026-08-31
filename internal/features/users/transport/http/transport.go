@@ -38,6 +38,10 @@ type UsersService interface {
 		ctx context.Context,
 		data domain.UserAuthorize,
 	) (string, error)
+	EmailVerification(
+		ctx context.Context,
+		token string,
+	) error
 }
 
 func NewUsersHTTPHandler(usersService UsersService) *UsersHTTPHandler {
@@ -77,6 +81,11 @@ func (h *UsersHTTPHandler) Routes() []core_http_server.Route {
 			Method:  http.MethodPost,
 			Path:    "/users/login",
 			Handler: h.AuthorizeUser,
+		},
+		{
+			Method:  http.MethodGet,
+			Path:    "/users/login/verify",
+			Handler: h.EmailVerification,
 		},
 	}
 }

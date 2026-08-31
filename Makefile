@@ -9,10 +9,15 @@ endif
 export PROJECT_ROOT
 
 env-up:
-	@docker compose up -d pollify-postgres
+	@docker compose up -d pollify-postgres && \
+	docker compose up -d rabbitmq && \
+	docker compose up -d redis
 
 env-down:
-	@docker compose down pollify-postgres
+	@docker compose down pollify-postgres && \
+	docker compose down rabbitmq && \
+	docker compose down port-forwarder && \
+   	docker compose up -d redis
 
 env-cleanup:
 	@read -p "Clean all environment volume files? [y/N]: " ans; \
@@ -56,7 +61,6 @@ migrate-action:
 		-path=//migrations \
 		-database "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pollify-postgres:5432/${POSTGRES_DB}?sslmode=disable" \
 		"$(action)"
-
 
 pollify-run:
 	@export LOGGER_FOLDER=${PROJECT_ROOT}/out/logs && \
