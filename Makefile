@@ -11,13 +11,17 @@ export PROJECT_ROOT
 env-up:
 	@docker compose up -d pollify-postgres && \
 	docker compose up -d rabbitmq && \
-	docker compose up -d redis
+	docker compose up -d redis && \
+	docker compose up -d grafana && \
+	docker compose up -d prometheus
 
 env-down:
 	@docker compose down pollify-postgres && \
 	docker compose down rabbitmq && \
 	docker compose down port-forwarder && \
-   	docker compose up -d redis
+   	docker compose down redis && \
+	docker compose down grafana && \
+	docker compose down prometheus
 
 env-cleanup:
 	@read -p "Clean all environment volume files? [y/N]: " ans; \
