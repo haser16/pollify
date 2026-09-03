@@ -1,12 +1,18 @@
 package core_http_middleware
 
 import (
+	"fmt"
 	"net/http"
+	core_config "pollify/internal/core/config"
 	core_logger "pollify/internal/core/logger"
 	core_http_response "pollify/internal/core/transport/http/response"
+	"strconv"
+	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 )
 
@@ -81,6 +87,109 @@ func Trace() Middleware {
 			log.Debug("<<< done HTTP request",
 				zap.Int("status_code", rw.GetStatusCode()),
 				zap.Duration("latency", time.Now().Sub(before)))
+		})
+	}
+}
+
+func Authorization() Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authHeader := r.Header.Get("Authorization")
+			config := core_config.NewConfigMust()
+
+			if authHeader == "" {
+				http.Error(w, "Authorization header is required", http.StatusUnauthorized)
+				return
+			}
+
+			parts := strings.Split(authHeader, " ")
+
+			if len(parts) != 2 || parts[0] != "Bearer" {
+				http.Error(w, "Invalid authorization header", http.StatusUnauthorized)
+				return
+			}
+
+			tokenString := parts[1]
+
+			token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+
+				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, fmt.Errorf(
+						"unexpected signing method: %v",
+						token.Header["alg"],
+					)
+				}
+
+				return config.JWTToken, nil
+			})
+
+			if err != nil || !token.Valid {
+				http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+var (
+	httpRequestsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_requests_total",
+			Help: "Total number of HTTP requests",
+		},
+		[]string{"method", "path", "status"},
+	)
+
+	httpRequestDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name: "http_request_duration_seconds",
+			Help: "HTTP request duration in seconds",
+		},
+		[]string{"method", "path"},
+	)
+)
+
+func init() {
+	prometheus.MustRegister(httpRequestsTotal)
+	prometheus.MustRegister(httpRequestDuration)
+}
+
+type responseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
+}
+
+func Metrics() Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+
+			rw := &responseWriter{
+				ResponseWriter: w,
+				statusCode:     http.StatusOK,
+			}
+
+			next.ServeHTTP(rw, r)
+
+			duration := time.Since(start).Seconds()
+
+			httpRequestsTotal.WithLabelValues(
+				r.Method,
+				r.URL.Path,
+				strconv.Itoa(rw.statusCode),
+			).Inc()
+
+			httpRequestDuration.WithLabelValues(
+				r.Method,
+				r.URL.Path,
+			).Observe(duration)
 		})
 	}
 }

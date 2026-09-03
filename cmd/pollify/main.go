@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
-	core_config "pollify/internal/core/config"
+	"pollify/internal/core/config"
 	core_logger "pollify/internal/core/logger"
 	core_publisher_rabbitmq "pollify/internal/core/publisher/rabbitmq"
 	core_pgx_pool "pollify/internal/core/repository/postgres/pool/pgx"
@@ -23,11 +24,16 @@ import (
 	votes_transport_http "pollify/internal/features/votes/transport/http"
 	"syscall"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 )
 
 func main() {
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	ctx, cancel := signal.NotifyContext(
+		context.Background(),
+		syscall.SIGINT,
+		syscall.SIGTERM,
+	)
 	defer cancel()
 
 	config := core_config.NewConfigMust()
@@ -47,7 +53,6 @@ func main() {
 	if err != nil {
 		logger.Fatal("Failed to initialize publisher", zap.Error(err))
 	}
-
 	defer publisher.Close()
 
 	logger.Debug("initialize postgres connection pool")
@@ -59,12 +64,18 @@ func main() {
 
 	logger.Debug("initialize redis connection pool")
 	redisClient := core_redis.New(config.RedisAddr)
-
 	verificationStore := core_redis.NewVerificationStore(redisClient)
 
 	logger.Debug("initializing feature", zap.String("feature", "users"))
-	usersRepository := users_postgres_repository.NewUsersRepository(pool, verificationStore)
-	usersService := users_service.NewUsersService(usersRepository, config.JWTToken, publisher)
+	usersRepository := users_postgres_repository.NewUsersRepository(
+		pool,
+		verificationStore,
+	)
+	usersService := users_service.NewUsersService(
+		usersRepository,
+		config.JWTToken,
+		publisher,
+	)
 	usersTransportHTTP := users_transport_http.NewUsersHTTPHandler(usersService)
 
 	logger.Debug("initializing feature", zap.String("feature", "polls"))
@@ -77,16 +88,38 @@ func main() {
 	votesService := votes_service.NewVotesService(votesRepository)
 	votesTransportHTTP := votes_transport_http.NewVotesHTTPHandler(votesService)
 
+	go func() {
+		metricsMux := http.NewServeMux()
+		metricsMux.Handle("/metrics", promhttp.Handler())
+
+		logger.Info(
+			"metrics server started",
+			zap.String("addr", ":9091"),
+		)
+
+		if err := http.ListenAndServe(":9091", metricsMux); err != nil {
+			logger.Error(
+				"metrics server error",
+				zap.Error(err),
+			)
+		}
+	}()
+
 	logger.Debug("initializing HTTP server")
 	httpServer := core_http_server.NewHTTPServer(
 		core_http_server.NewConfigMust(),
 		logger,
 		core_http_middleware.RequestID(),
+		core_http_middleware.Metrics(),
+		// core_http_middleware.Authorization(),
 		core_http_middleware.Logger(logger),
 		core_http_middleware.Trace(),
 		core_http_middleware.Panic(),
 	)
-	apiVersionRouter := core_http_server.NewAPIVersionRouter(&core_http_server.APIVersion1)
+
+	apiVersionRouter := core_http_server.NewAPIVersionRouter(
+		&core_http_server.APIVersion1,
+	)
 
 	apiVersionRouter.RegisterRoutes(usersTransportHTTP.Routes()...)
 	apiVersionRouter.RegisterRoutes(pollsTransportHTTP.Routes()...)
