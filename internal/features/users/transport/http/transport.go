@@ -2,6 +2,7 @@ package users_transport_http
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"pollify/internal/core/domain"
 	core_http_server "pollify/internal/core/transport/http/server"
@@ -42,6 +43,12 @@ type UsersService interface {
 		ctx context.Context,
 		token string,
 	) error
+	UploadAvatar(
+		ctx context.Context,
+		userID string,
+		file io.Reader,
+		contentType string,
+	) error
 }
 
 func NewUsersHTTPHandler(usersService UsersService) *UsersHTTPHandler {
@@ -81,6 +88,11 @@ func (h *UsersHTTPHandler) Routes() []core_http_server.Route {
 			Method:  http.MethodPost,
 			Path:    "/users/login",
 			Handler: h.AuthorizeUser,
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/users/{id}/avatar",
+			Handler: h.UploadAvatar,
 		},
 		{
 			Method:  http.MethodGet,

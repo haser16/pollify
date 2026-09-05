@@ -21,6 +21,11 @@ type Config struct {
 	QueueEmailName string `envconfig:"QUEUE_EMAIL_NAME" required:"true"`
 
 	RedisAddr string `envconfig:"REDIS_ADDR" required:"true"`
+
+	S3Endpoint  string `envconfig:"S3_ENDPOINT" required:"true"`
+	S3Region    string `envconfig:"S3_REGION" required:"true"`
+	S3AccessKey string `envconfig:"S3_ACCESS_KEY" required:"true"`
+	S3SecretKey string `envconfig:"S3_SECRET_KEY" required:"true"`
 }
 
 func NewConfig() (Config, error) {

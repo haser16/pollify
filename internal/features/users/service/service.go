@@ -2,6 +2,7 @@ package users_service
 
 import (
 	"context"
+	"io"
 	"pollify/internal/core/domain"
 	"pollify/internal/core/publisher"
 )
@@ -9,6 +10,7 @@ import (
 type UsersService struct {
 	usersRepository UsersRepository
 	publisher       core_publisher.Publisher
+	s3              UsersS3Repository
 
 	jwtSecret []byte
 }
@@ -55,14 +57,25 @@ type UsersRepository interface {
 	) error
 }
 
+type UsersS3Repository interface {
+	UploadAvatar(
+		ctx context.Context,
+		userID string,
+		file io.Reader,
+		contentType string,
+	) error
+}
+
 func NewUsersService(
 	usersRepository UsersRepository,
 	jwtSecret string,
 	publisher core_publisher.Publisher,
+	s3 UsersS3Repository,
 ) *UsersService {
 	return &UsersService{
 		usersRepository: usersRepository,
 		jwtSecret:       []byte(jwtSecret),
 		publisher:       publisher,
+		s3:              s3,
 	}
 }

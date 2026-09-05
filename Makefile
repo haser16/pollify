@@ -66,6 +66,12 @@ migrate-action:
 		-database "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pollify-postgres:5432/${POSTGRES_DB}?sslmode=disable" \
 		"$(action)"
 
+minio-up:
+	@docker compose up -d minio
+
+minio-down:
+	@docker compose down minio
+
 pollify-run:
 	@export LOGGER_FOLDER=${PROJECT_ROOT}/out/logs && \
     	export POSTGRES_HOST=localhost && \
