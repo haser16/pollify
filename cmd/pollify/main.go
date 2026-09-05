@@ -11,12 +11,14 @@ import (
 	core_publisher_rabbitmq "pollify/internal/core/publisher/rabbitmq"
 	core_pgx_pool "pollify/internal/core/repository/postgres/pool/pgx"
 	core_redis "pollify/internal/core/repository/redis"
+	core_s3_aws "pollify/internal/core/repository/s3/aws"
 	core_http_middleware "pollify/internal/core/transport/http/middleware"
 	core_http_server "pollify/internal/core/transport/http/server"
 	polls_postgres_repository "pollify/internal/features/polls/repository/postgres"
 	polls_service "pollify/internal/features/polls/service"
 	polls_transport_http "pollify/internal/features/polls/transport/http"
 	users_postgres_repository "pollify/internal/features/users/repository/postgres"
+	users_s3_repository "pollify/internal/features/users/repository/s3"
 	users_service "pollify/internal/features/users/service"
 	users_transport_http "pollify/internal/features/users/transport/http"
 	votes_postgres_repository "pollify/internal/features/votes/repository/postgres"
@@ -66,15 +68,34 @@ func main() {
 	redisClient := core_redis.New(config.RedisAddr)
 	verificationStore := core_redis.NewVerificationStore(redisClient)
 
+	logger.Debug("initialize s3 connection pool")
+	s3SDKClient, err := core_s3_aws.NewSDKClient(
+		ctx,
+		config.S3Endpoint,
+		config.S3Region,
+		config.S3AccessKey,
+		config.S3SecretKey,
+	)
+	if err != nil {
+		logger.Fatal(
+			"failed to initialize s3 client",
+			zap.Error(err),
+		)
+	}
+
+	s3Storage := core_s3_aws.NewClient(s3SDKClient)
+
 	logger.Debug("initializing feature", zap.String("feature", "users"))
 	usersRepository := users_postgres_repository.NewUsersRepository(
 		pool,
 		verificationStore,
 	)
+	usersS3Repository := users_s3_repository.NewUsersRepository(s3Storage, "users")
 	usersService := users_service.NewUsersService(
 		usersRepository,
 		config.JWTToken,
 		publisher,
+		usersS3Repository,
 	)
 	usersTransportHTTP := users_transport_http.NewUsersHTTPHandler(usersService)
 
